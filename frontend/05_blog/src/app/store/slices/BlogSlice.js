@@ -26,7 +26,7 @@ export const deleteBlog = createAsyncThunk('blog/deleteBlog', async (id) => {
     
     const api_key = "b6e9dd5755936ea772dbd0c652d1efa3";
     const url = "http://localhost:3000/v1/user/delete-blog";
-
+    const data = {"blog_id": id}
     const response = await secureFetch(url,data,'POST',api_key)
     console.log("response",response)
     return response
@@ -45,7 +45,7 @@ export const deleteBlog = createAsyncThunk('blog/deleteBlog', async (id) => {
     
 });
 export const viewDetails = createAsyncThunk('blog/viewDetails', async (id) => {
-
+    console.log("idd",id)
     const api_key = "b6e9dd5755936ea772dbd0c652d1efa3";
     const url = `http://localhost:3000/v1/user/get-blog-details/${id}`;
     const data = {}

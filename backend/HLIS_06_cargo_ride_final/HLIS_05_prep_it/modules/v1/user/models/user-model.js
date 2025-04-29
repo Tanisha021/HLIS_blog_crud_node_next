@@ -14,18 +14,17 @@ class UserModel {
             const [blogResult] = await database.query(insertBlogQuery, [blogData]);
             const blog_id = blogResult.insertId;
 
-            const tags = tag_id;
-            const insertTagsQuery = `insert into tbl_rel_blog_tags (blog_id, tag_id) values ?`;
+            if(Array.isArray(tag_id) && tag_id.length > 0) {
+                const insertTagsQuery = `insert into tbl_rel_blog_tags (blog_id, tag_id) values ?`;
 
-            const tagValues = tags.map(tag => [blog_id, tag]);
-            if(tagValues.length > 0) {
+                const tagValues = tag_id.map(tag => [blog_id, tag]);
                 await database.query(insertTagsQuery, [tagValues]);
             }
 
             return{
                 code: response_code.SUCCESS,
                 message: t('task_created_successfully'),
-                data: { blog_id, title, content, tag_ids: tags }
+                data: { blog_id, title, content, tag_ids: tag_id || [] }
             }
 
         } catch (error) {
@@ -39,10 +38,10 @@ class UserModel {
 
     async showAllBlogs(request_data) {
         try {
-            const getBlogs = `SELECT b.blog_id, b.title, b.content, b.status, b.created_at, t.tag_name 
+            const getBlogs = `SELECT b.blog_id, b.title, b.content, b.status, b.created_at, COALESCE(GROUP_CONCAT(t.tag_name), '') AS tags
                               FROM tbl_blog AS b 
-                              INNER JOIN tbl_rel_blog_tags rbt ON b.blog_id = rbt.blog_id
-                              INNER JOIN tbl_tags AS t ON t.tag_id = rbt.tag_id where b.is_delete=0` ;
+                              left JOIN tbl_rel_blog_tags rbt ON b.blog_id = rbt.blog_id
+                              left JOIN tbl_tags AS t ON t.tag_id = rbt.tag_id where b.is_delete=0 group by b.blog_id;` ;
     
             const [blogs] = await database.query(getBlogs);
     
@@ -117,10 +116,11 @@ class UserModel {
     async getBlogById(id) {
         try{
             const blog_id = id;
-            const getBlogQuery = `SELECT b.blog_id, b.title, b.content, b.status, b.created_at, t.tag_name 
+            const getBlogQuery = `SELECT b.blog_id, b.title, b.content, b.status, DATE_FORMAT(b.created_at, '%d-%m-%Y') AS created_at, 
+                                     t.tag_name 
                                   FROM tbl_blog AS b 
-                                  INNER JOIN tbl_rel_blog_tags rbt ON b.blog_id = rbt.blog_id
-                                  INNER JOIN tbl_tags AS t ON t.tag_id = rbt.tag_id 
+                                  left JOIN tbl_rel_blog_tags rbt ON b.blog_id = rbt.blog_id
+                                  left JOIN tbl_tags AS t ON t.tag_id = rbt.tag_id 
                                   WHERE b.blog_id = ? and b.is_delete=0`;
             const [blogData] = await database.query(getBlogQuery, [blog_id]);
 
